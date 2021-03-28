@@ -444,7 +444,7 @@ func testAccKubernetesCluster_upgradeChannel(t *testing.T) {
 			Check: resource.ComposeTestCheckFunc(
 				check.That(data.ResourceName).ExistsInAzure(r),
 				check.That(data.ResourceName).Key("kubernetes_version").HasValue(olderKubernetesVersion),
-				check.That(data.ResourceName).Key("automatic_channel_upgrade").HasValue(""),
+				check.That(data.ResourceName).Key("automatic_channel_upgrade").HasValue("none"),
 			),
 		},
 		data.ImportStep(),
