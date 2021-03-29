@@ -46,7 +46,7 @@ func resourceApiManagementCertificate() *schema.Resource {
 
 			"data": {
 				Type:         schema.TypeString,
-				Required:     true,
+				Optional:     true,
 				Sensitive:    true,
 				ValidateFunc: validation.StringIsBase64,
 			},
@@ -61,15 +61,13 @@ func resourceApiManagementCertificate() *schema.Resource {
 				Type:          schema.TypeString,
 				Optional:      true,
 				ForceNew:      true,
-				ValidateFunc:  keyVaultValidate.VersionlessNestedItemId,
+				ValidateFunc:  keyVaultValidate.NestedItemIdWithOptionalVersion,
 				ConflictsWith: []string{"data", "password"},
 			},
 
 			"key_vault_identity_client_id": {
-				Type:         schema.TypeList,
+				Type:         schema.TypeString,
 				Optional:     true,
-				ForceNew:     true,
-				MaxItems:     1,
 				ValidateFunc: validation.IsUUID,
 			},
 
@@ -105,7 +103,7 @@ func resourceApiManagementCertificateCreateUpdate(d *schema.ResourceData, meta i
 	keyVaultIdentity := d.Get("key_vault_identity_client_id").(string)
 
 	if data == "" && keyVaultSecretId == "" {
-		return fmt.Errorf("Either `data` or `key_vault_secret_id` must be set")
+		return fmt.Errorf("either `data` or `key_vault_secret_id` must be set")
 	}
 
 	if d.IsNewResource() {
@@ -152,7 +150,7 @@ func resourceApiManagementCertificateCreateUpdate(d *schema.ResourceData, meta i
 		return fmt.Errorf("retrieving Certificate %q (Resource Group %q / API Management Service %q): %+v", name, resourceGroup, serviceName, err)
 	}
 	if resp.ID == nil {
-		return fmt.Errorf("Cannot read ID for Certificate %q (Resource Group %q / API Management Service %q)", name, resourceGroup, serviceName)
+		return fmt.Errorf("cannot read ID for Certificate %q (Resource Group %q / API Management Service %q)", name, resourceGroup, serviceName)
 	}
 	d.SetId(*resp.ID)
 
@@ -195,6 +193,8 @@ func resourceApiManagementCertificateRead(d *schema.ResourceData, meta interface
 
 		d.Set("subject", props.Thumbprint)
 		d.Set("thumbprint", props.Thumbprint)
+		d.Set("key_vault_secret_id", props.KeyVault.SecretIdentifier)
+		d.Set("key_vault_identity_client_id", props.KeyVault.IdentityClientID)
 	}
 
 	return nil
