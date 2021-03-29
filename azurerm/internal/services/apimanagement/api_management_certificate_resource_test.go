@@ -45,6 +45,56 @@ func TestAccApiManagementCertificate_basic(t *testing.T) {
 	})
 }
 
+func TestAccApiManagementCertificate_basicKeyVaultSystemIdentity(t *testing.T) {
+	data := acceptance.BuildTestData(t, "azurerm_api_management_certificate", "test")
+	r := ApiManagementCertificateResource{}
+
+	data.ResourceTest(t, r, []resource.TestStep{
+		{
+			Config: r.basicKeyVaultSystemIdentity(data),
+			Check: resource.ComposeTestCheckFunc(
+				check.That(data.ResourceName).ExistsInAzure(r),
+				check.That(data.ResourceName).Key("key_vault_secret_id").Exists(),
+				check.That(data.ResourceName).Key("expiration").Exists(),
+				check.That(data.ResourceName).Key("subject").Exists(),
+				check.That(data.ResourceName).Key("thumbprint").Exists(),
+			),
+		},
+		{
+			ResourceName: data.ResourceName,
+			ImportState:  true,
+			ImportStateVerifyIgnore: []string{
+				// not returned from the API
+				"key_vault_secret_id",
+			},
+		},
+	})
+}
+
+func TestAccApiManagementCertificate_basicKeyVaultUserIdentity(t *testing.T) {
+	data := acceptance.BuildTestData(t, "azurerm_api_management_certificate", "test")
+	r := ApiManagementCertificateResource{}
+
+	data.ResourceTest(t, r, []resource.TestStep{
+		{
+			Config: r.basicKeyVaultUserIdentity(data),
+			Check: resource.ComposeTestCheckFunc(
+				check.That(data.ResourceName).ExistsInAzure(r),
+				check.That(data.ResourceName).Key("key_vault_secret_id").Exists(),
+				check.That(data.ResourceName).Key("key_vault_identity_client_id").Exists(),
+				check.That(data.ResourceName).Key("expiration").Exists(),
+				check.That(data.ResourceName).Key("subject").Exists(),
+				check.That(data.ResourceName).Key("thumbprint").Exists(),
+			),
+		},
+		{
+			ResourceName:      data.ResourceName,
+			ImportState:       true,
+			ImportStateVerify: true,
+		},
+	})
+}
+
 func TestAccApiManagementCertificate_requiresImport(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_api_management_certificate", "test")
 	r := ApiManagementCertificateResource{}
@@ -105,6 +155,127 @@ resource "azurerm_api_management_certificate" "test" {
   password            = ""
 }
 `, data.RandomInteger, data.Locations.Primary, data.RandomInteger)
+}
+
+func (ApiManagementCertificateResource) basicKeyVaultSystemIdentity(data acceptance.TestData) string {
+	return fmt.Sprintf(`
+provider "azurerm" {
+  features {}
+}
+
+data "azurerm_api_management" "test" {
+  name                = "mattiasapitest"
+  resource_group_name = "api-test"
+}
+
+data "azurerm_client_config" "test" {}
+
+resource "azurerm_resource_group" "test" {
+  name     = "acctestwebcert%d"
+  location = "%s"
+}
+
+resource "azurerm_key_vault" "test" {
+  name                = "acct%d"
+  location            = azurerm_resource_group.test.location
+  resource_group_name = azurerm_resource_group.test.name
+  soft_delete_enabled = true
+
+  tenant_id = data.azurerm_client_config.test.tenant_id
+
+  sku_name = "standard"
+
+  access_policy {
+    tenant_id = data.azurerm_client_config.test.tenant_id
+    object_id = data.azurerm_client_config.test.object_id
+
+    secret_permissions = [
+      "delete",
+      "get",
+      "purge",
+      "set",
+    ]
+
+    certificate_permissions = [
+      "create",
+      "delete",
+      "get",
+      "purge",
+      "import",
+    ]
+  }
+
+  access_policy {
+    tenant_id = data.azurerm_api_management.test.identity.0.tenant_id
+    object_id = data.azurerm_api_management.test.identity.0.principal_id
+
+    secret_permissions = [
+      "get",
+    ]
+
+    certificate_permissions = [
+      "get",
+    ]
+  }
+}
+
+resource "azurerm_key_vault_certificate" "test" {
+  name         = "acctest%d"
+  key_vault_id = azurerm_key_vault.test.id
+
+  certificate {
+    contents = filebase64("testdata/api_management_api_test.pfx")
+    password = "terraform"
+  }
+
+  certificate_policy {
+    issuer_parameters {
+      name = "Self"
+    }
+
+    key_properties {
+      exportable = true
+      key_size   = 2048
+      key_type   = "RSA"
+      reuse_key  = false
+    }
+
+    secret_properties {
+      content_type = "application/x-pkcs12"
+    }
+  }
+}
+
+resource "azurerm_api_management_certificate" "test" {
+  name                = "example-cert"
+  api_management_name = data.azurerm_api_management.test.name
+  resource_group_name = "api-test"
+
+  key_vault_secret_id = azurerm_key_vault_certificate.test.secret_id
+}
+`, data.RandomInteger, data.Locations.Primary, data.RandomInteger, data.RandomInteger)
+}
+
+func (ApiManagementCertificateResource) basicKeyVaultUserIdentity(data acceptance.TestData) string {
+	return `
+provider "azurerm" {
+  features {}
+}
+
+data "azurerm_api_management" "test" {
+  name                = "mattiasapitest"
+  resource_group_name = "api-test"
+}
+
+resource "azurerm_api_management_certificate" "test" {
+  name                = "example-cert"
+  api_management_name = data.azurerm_api_management.test.name
+  resource_group_name = "api-test"
+
+  key_vault_secret_id = "https://mattias-keyvault.vault.azure.net/secrets/AKS-Issuing-Cert"
+  key_vault_identity_client_id = "391e21d5-2c57-437b-a8f2-bb51f5c5260b"
+}
+`
 }
 
 func (r ApiManagementCertificateResource) requiresImport(data acceptance.TestData) string {
