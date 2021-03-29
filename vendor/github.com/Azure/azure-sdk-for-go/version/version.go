@@ -18,4 +18,8 @@ package version
 // Changes may cause incorrect behavior and will be lost if the code is regenerated.
 
 // Number contains the semantic version of this SDK.
+<<<<<<< HEAD
 const Number = "v53.0.0"
+=======
+const Number = "v52.6.0"
+>>>>>>> updated apimanagement sdk
