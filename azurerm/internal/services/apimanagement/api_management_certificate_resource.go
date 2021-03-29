@@ -8,12 +8,14 @@ import (
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/apimanagement/parse"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/apimanagement/schemaz"
 
-	"github.com/Azure/azure-sdk-for-go/services/apimanagement/mgmt/2019-12-01/apimanagement"
+	"github.com/Azure/azure-sdk-for-go/services/apimanagement/mgmt/2020-12-01/apimanagement"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/azure"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/helpers/tf"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/clients"
+	keyVaultParse "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/keyvault/parse"
+	keyVaultValidate "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/keyvault/validate"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/timeouts"
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/utils"
 )
@@ -55,6 +57,22 @@ func resourceApiManagementCertificate() *schema.Resource {
 				Sensitive: true,
 			},
 
+			"key_vault_secret_id": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				ForceNew:      true,
+				ValidateFunc:  keyVaultValidate.VersionlessNestedItemId,
+				ConflictsWith: []string{"data", "password"},
+			},
+
+			"key_vault_identity_client_id": {
+				Type:         schema.TypeList,
+				Optional:     true,
+				ForceNew:     true,
+				MaxItems:     1,
+				ValidateFunc: validation.IsUUID,
+			},
+
 			"expiration": {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -83,6 +101,12 @@ func resourceApiManagementCertificateCreateUpdate(d *schema.ResourceData, meta i
 	serviceName := d.Get("api_management_name").(string)
 	data := d.Get("data").(string)
 	password := d.Get("password").(string)
+	keyVaultSecretId := d.Get("key_vault_secret_id").(string)
+	keyVaultIdentity := d.Get("key_vault_identity_client_id").(string)
+
+	if data == "" && keyVaultSecretId == "" {
+		return fmt.Errorf("Either `data` or `key_vault_secret_id` must be set")
+	}
 
 	if d.IsNewResource() {
 		existing, err := client.Get(ctx, resourceGroup, serviceName, name)
@@ -98,10 +122,25 @@ func resourceApiManagementCertificateCreateUpdate(d *schema.ResourceData, meta i
 	}
 
 	parameters := apimanagement.CertificateCreateOrUpdateParameters{
-		CertificateCreateOrUpdateProperties: &apimanagement.CertificateCreateOrUpdateProperties{
-			Data:     utils.String(data),
-			Password: utils.String(password),
-		},
+		CertificateCreateOrUpdateProperties: &apimanagement.CertificateCreateOrUpdateProperties{},
+	}
+
+	if keyVaultSecretId != "" {
+		parsedSecretId, err := keyVaultParse.ParseOptionallyVersionedNestedItemID(keyVaultSecretId)
+		if err != nil {
+			return err
+		}
+		parameters.KeyVault = &apimanagement.KeyVaultContractCreateProperties{
+			SecretIdentifier: utils.String(parsedSecretId.VersionlessID()),
+		}
+		if keyVaultIdentity != "" {
+			parameters.KeyVault.IdentityClientID = utils.String(keyVaultIdentity)
+		}
+	}
+
+	if data != "" {
+		parameters.Data = utils.String(data)
+		parameters.Password = utils.String(password)
 	}
 
 	if _, err := client.CreateOrUpdate(ctx, resourceGroup, serviceName, name, parameters, ""); err != nil {

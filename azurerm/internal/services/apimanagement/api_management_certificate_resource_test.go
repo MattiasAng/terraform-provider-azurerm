@@ -45,6 +45,29 @@ func TestAccApiManagementCertificate_basic(t *testing.T) {
 	})
 }
 
+func TestAccApiManagementCertificate_basicKeyVault(t *testing.T) {
+	data := acceptance.BuildTestData(t, "azurerm_api_management_certificate", "test")
+	r := ApiManagementCertificateResource{}
+
+	data.ResourceTest(t, r, []resource.TestStep{
+		{
+			Config: r.basicKeyVault(data),
+			Check: resource.ComposeTestCheckFunc(
+				check.That(data.ResourceName).ExistsInAzure(r),
+				check.That(data.ResourceName).Key("key_vault_secret_id").Exists(),
+				check.That(data.ResourceName).Key("expiration").Exists(),
+				check.That(data.ResourceName).Key("subject").Exists(),
+				check.That(data.ResourceName).Key("thumbprint").Exists(),
+			),
+		},
+		{
+			ResourceName:      data.ResourceName,
+			ImportState:       true,
+			ImportStateVerify: true,
+		},
+	})
+}
+
 func TestAccApiManagementCertificate_requiresImport(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_api_management_certificate", "test")
 	r := ApiManagementCertificateResource{}
@@ -103,6 +126,28 @@ resource "azurerm_api_management_certificate" "test" {
   resource_group_name = azurerm_resource_group.test.name
   data                = filebase64("testdata/keyvaultcert.pfx")
   password            = ""
+}
+`, data.RandomInteger, data.Locations.Primary, data.RandomInteger)
+}
+
+func (ApiManagementCertificateResource) basicKeyVault(data acceptance.TestData) string {
+	return fmt.Sprintf(`
+provider "azurerm" {
+  features {}
+}
+
+data "azurerm_api_management" "test" {
+  name                = "mattiasapitest"
+  resource_group_name = "api-test"
+}
+
+resource "azurerm_api_management_certificate" "test" {
+  name                = "example-cert"
+  api_management_name = data.azurerm_api_management.test.name
+  resource_group_name = "api-test"
+
+  key_vault_secret_id = "https://mattias-keyvault.vault.azure.net/secrets/AKS-Issuing-Cert"
+  key_vault_identity_client_id = "391e21d5-2c57-437b-a8f2-bb51f5c5260b"
 }
 `, data.RandomInteger, data.Locations.Primary, data.RandomInteger)
 }
