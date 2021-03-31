@@ -282,6 +282,24 @@ func resourceStorageAccount() *schema.Resource {
 								},
 							},
 						},
+						"versioning_enabled": {
+							Type:     schema.TypeBool,
+							Optional: true,
+						},
+						"change_feed": {
+							Type:     schema.TypeList,
+							Optional: true,
+							MaxItems: 1,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"days": {
+										Type:         schema.TypeInt,
+										Optional:     true,
+										ValidateFunc: validation.IntBetween(1, 146000),
+									},
+								},
+							},
+						},
 					},
 				},
 			},
@@ -1497,12 +1515,18 @@ func expandBlobProperties(input []interface{}) storage.BlobServiceProperties {
 
 	v := input[0].(map[string]interface{})
 
+	if v["versioning_enabled"].(bool) {
+		props.IsVersioningEnabled = utils.Bool(v["versioning_enabled"].(bool))
+	}
+
 	deletePolicyRaw := v["delete_retention_policy"].([]interface{})
 	props.BlobServicePropertiesProperties.DeleteRetentionPolicy = expandBlobPropertiesDeleteRetentionPolicy(deletePolicyRaw)
 	containerDeletePolicyRaw := v["container_delete_retention_policy"].([]interface{})
 	props.BlobServicePropertiesProperties.ContainerDeleteRetentionPolicy = expandBlobPropertiesDeleteRetentionPolicy(containerDeletePolicyRaw)
 	corsRaw := v["cors_rule"].([]interface{})
 	props.BlobServicePropertiesProperties.Cors = expandBlobPropertiesCors(corsRaw)
+	changeFeedRaw := v["change_feed"].([]interface{})
+	props.BlobServicePropertiesProperties.ChangeFeed = expandBlobPropertiesChangeFeed(changeFeedRaw)
 
 	return props
 }
@@ -1554,6 +1578,21 @@ func expandBlobPropertiesCors(input []interface{}) *storage.CorsRules {
 	blobCorsRules.CorsRules = &corsRules
 
 	return &blobCorsRules
+}
+
+func expandBlobPropertiesChangeFeed(input []interface{}) *storage.ChangeFeed {
+	changeFeed := storage.ChangeFeed{}
+
+	if len(input) == 0 {
+		return &changeFeed
+	}
+
+	changeFeedAttr := input[0].(map[string]interface{})
+	days := changeFeedAttr["days"].(int)
+	changeFeed.Enabled = utils.Bool(true)
+	changeFeed.RetentionInDays = utils.Int32(int32(days))
+
+	return &changeFeed
 }
 
 func expandQueueProperties(input []interface{}) (queues.StorageServiceProperties, error) {
@@ -1772,7 +1811,12 @@ func flattenBlobProperties(input storage.BlobServiceProperties) []interface{} {
 		flattenedContainerDeletePolicy = flattenBlobPropertiesDeleteRetentionPolicy(containerDeletePolicy)
 	}
 
-	if len(flattenedCorsRules) == 0 && len(flattenedDeletePolicy) == 0 && len(flattenedContainerDeletePolicy) == 0 {
+	flattenedChangeFeed := make([]interface{}, 0)
+	if changeFeed := input.BlobServicePropertiesProperties.ChangeFeed; changeFeed != nil {
+		flattenedChangeFeed = flattenBlobPropertiesChangeFeed(changeFeed)
+	}
+
+	if len(flattenedCorsRules) == 0 && len(flattenedDeletePolicy) == 0 && len(flattenedContainerDeletePolicy) == 0 && len(flattenedChangeFeed) == 0 {
 		return []interface{}{}
 	}
 
@@ -1781,6 +1825,8 @@ func flattenBlobProperties(input storage.BlobServiceProperties) []interface{} {
 			"cors_rule":                         flattenedCorsRules,
 			"delete_retention_policy":           flattenedDeletePolicy,
 			"container_delete_retention_policy": flattenedContainerDeletePolicy,
+			"change_feed":                       flattenedChangeFeed,
+			"versioning_enabled":                input.BlobServicePropertiesProperties.IsVersioningEnabled,
 		},
 	}
 }
@@ -1849,6 +1895,27 @@ func flattenBlobPropertiesDeleteRetentionPolicy(input *storage.DeleteRetentionPo
 	}
 
 	return deleteRetentionPolicy
+}
+
+func flattenBlobPropertiesChangeFeed(input *storage.ChangeFeed) []interface{} {
+	changeFeed := make([]interface{}, 0)
+
+	if input == nil {
+		return changeFeed
+	}
+
+	if enabled := input.Enabled; enabled != nil && *enabled {
+		days := 0
+		if input.RetentionInDays != nil {
+			days = int(*input.RetentionInDays)
+		}
+
+		changeFeed = append(changeFeed, map[string]interface{}{
+			"days": days,
+		})
+	}
+
+	return changeFeed
 }
 
 func flattenQueueProperties(input *queues.StorageServiceProperties) []interface{} {
