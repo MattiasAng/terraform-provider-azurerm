@@ -83,7 +83,7 @@ resource "azurerm_key_vault_access_policy" "example" {
   certificate_permissions = [
     "get",
   ]
-} 
+}
 
 resource "azurerm_key_vault_certificate" "example" {
   name         = "example-cert"
@@ -116,7 +116,7 @@ resource "azurerm_api_management_certificate" "example" {
   name                = "example-cert"
   api_management_name = azurerm_api_management.example.name
   resource_group_name = azurerm_resource_group.example.name
-  
+
   key_vault_secret_id = azurerm_key_vault_certificate.example.secret_id
 }
 ```
