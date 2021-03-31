@@ -1049,7 +1049,7 @@ resource "azurerm_api_management" "test" {
   identity {
     type = "UserAssigned"
     identity_ids = [
-      azurerm_user_assigned_identity.test.id,
+      azurerm_user_assigned_identity.test.principal_id,
     ]
   }
 }
