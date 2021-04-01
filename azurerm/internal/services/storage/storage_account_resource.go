@@ -294,7 +294,7 @@ func resourceStorageAccount() *schema.Resource {
 								Schema: map[string]*schema.Schema{
 									"enabled": {
 										Type:     schema.TypeBool,
-										Optional: true,
+										Required: true,
 									},
 								},
 							},
@@ -1514,13 +1514,13 @@ func expandBlobProperties(input []interface{}) storage.BlobServiceProperties {
 
 	v := input[0].(map[string]interface{})
 
-	props.IsVersioningEnabled = utils.Bool(v["versioning_enabled"].(bool))
 	deletePolicyRaw := v["delete_retention_policy"].([]interface{})
 	props.BlobServicePropertiesProperties.DeleteRetentionPolicy = expandBlobPropertiesDeleteRetentionPolicy(deletePolicyRaw)
 	containerDeletePolicyRaw := v["container_delete_retention_policy"].([]interface{})
 	props.BlobServicePropertiesProperties.ContainerDeleteRetentionPolicy = expandBlobPropertiesDeleteRetentionPolicy(containerDeletePolicyRaw)
 	corsRaw := v["cors_rule"].([]interface{})
 	props.BlobServicePropertiesProperties.Cors = expandBlobPropertiesCors(corsRaw)
+	props.IsVersioningEnabled = utils.Bool(v["versioning_enabled"].(bool))
 	changeFeedRaw := v["change_feed"].([]interface{})
 	props.BlobServicePropertiesProperties.ChangeFeed = expandBlobPropertiesChangeFeed(changeFeedRaw)
 
@@ -1582,6 +1582,7 @@ func expandBlobPropertiesChangeFeed(input []interface{}) *storage.ChangeFeed {
 	if len(input) == 0 {
 		return &changeFeed
 	}
+
 	attrs := input[0].(map[string]interface{})
 	changeFeed.Enabled = utils.Bool(attrs["enabled"].(bool))
 
@@ -1813,15 +1814,17 @@ func flattenBlobProperties(input storage.BlobServiceProperties) []interface{} {
 		return []interface{}{}
 	}
 
-	return []interface{}{
-		map[string]interface{}{
-			"cors_rule":                         flattenedCorsRules,
-			"delete_retention_policy":           flattenedDeletePolicy,
-			"container_delete_retention_policy": flattenedContainerDeletePolicy,
-			"change_feed":                       flattenedChangeFeed,
-			"versioning_enabled":                input.BlobServicePropertiesProperties.IsVersioningEnabled,
-		},
+	serviceProps := make(map[string]interface{})
+	serviceProps["cors_rule"] = flattenedCorsRules
+	serviceProps["delete_retention_policy"] = flattenedDeletePolicy
+	serviceProps["container_delete_retention_policy"] = flattenedContainerDeletePolicy
+	serviceProps["change_feed"] = flattenedChangeFeed
+
+	if versioningEnabled := input.BlobServicePropertiesProperties.IsVersioningEnabled; versioningEnabled != nil {
+		serviceProps["versioning_enabled"] = versioningEnabled
 	}
+
+	return []interface{}{serviceProps}
 }
 
 func flattenBlobPropertiesCorsRule(input *storage.CorsRules) []interface{} {
@@ -1892,6 +1895,10 @@ func flattenBlobPropertiesDeleteRetentionPolicy(input *storage.DeleteRetentionPo
 
 func flattenBlobPropertiesChangeFeed(input *storage.ChangeFeed) []interface{} {
 	changeFeed := make([]interface{}, 0)
+
+	if input == nil {
+		return changeFeed
+	}
 
 	if enabled := input.Enabled; enabled != nil {
 		changeFeed = append(changeFeed, map[string]interface{}{
