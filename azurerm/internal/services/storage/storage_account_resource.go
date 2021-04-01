@@ -292,10 +292,9 @@ func resourceStorageAccount() *schema.Resource {
 							MaxItems: 1,
 							Elem: &schema.Resource{
 								Schema: map[string]*schema.Schema{
-									"days": {
-										Type:         schema.TypeInt,
-										Optional:     true,
-										ValidateFunc: validation.IntBetween(1, 146000),
+									"enabled": {
+										Type:     schema.TypeBool,
+										Optional: true,
 									},
 								},
 							},
@@ -1583,11 +1582,8 @@ func expandBlobPropertiesChangeFeed(input []interface{}) *storage.ChangeFeed {
 	if len(input) == 0 {
 		return &changeFeed
 	}
-
-	changeFeedAttr := input[0].(map[string]interface{})
-	days := changeFeedAttr["days"].(int)
-	changeFeed.Enabled = utils.Bool(true)
-	changeFeed.RetentionInDays = utils.Int32(int32(days))
+	attrs := input[0].(map[string]interface{})
+	changeFeed.Enabled = utils.Bool(attrs["enabled"].(bool))
 
 	return &changeFeed
 }
@@ -1897,18 +1893,9 @@ func flattenBlobPropertiesDeleteRetentionPolicy(input *storage.DeleteRetentionPo
 func flattenBlobPropertiesChangeFeed(input *storage.ChangeFeed) []interface{} {
 	changeFeed := make([]interface{}, 0)
 
-	if input == nil {
-		return changeFeed
-	}
-
-	if enabled := input.Enabled; enabled != nil && *enabled {
-		days := 0
-		if input.RetentionInDays != nil {
-			days = int(*input.RetentionInDays)
-		}
-
+	if enabled := input.Enabled; enabled != nil {
 		changeFeed = append(changeFeed, map[string]interface{}{
-			"days": days,
+			"enabled": input.Enabled,
 		})
 	}
 
