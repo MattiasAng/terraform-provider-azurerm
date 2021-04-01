@@ -1544,11 +1544,7 @@ resource "azurerm_storage_account" "test" {
       days = 7
     }
 
-	versioning_enabled = true
-
-	change_feed {
-		enabled = true
-	}
+    versioning_enabled = true
   }
 }
 `, data.RandomInteger, data.Locations.Primary, data.RandomString)
@@ -1596,8 +1592,7 @@ resource "azurerm_storage_account" "test" {
     container_delete_retention_policy {
     }
 
-	change_feed {
-	}
+    versioning_enabled = false
   }
 }
 `, data.RandomInteger, data.Locations.Primary, data.RandomString)

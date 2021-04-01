@@ -1515,10 +1515,7 @@ func expandBlobProperties(input []interface{}) storage.BlobServiceProperties {
 
 	v := input[0].(map[string]interface{})
 
-	if v["versioning_enabled"].(bool) {
-		props.IsVersioningEnabled = utils.Bool(v["versioning_enabled"].(bool))
-	}
-
+	props.IsVersioningEnabled = utils.Bool(v["versioning_enabled"].(bool))
 	deletePolicyRaw := v["delete_retention_policy"].([]interface{})
 	props.BlobServicePropertiesProperties.DeleteRetentionPolicy = expandBlobPropertiesDeleteRetentionPolicy(deletePolicyRaw)
 	containerDeletePolicyRaw := v["container_delete_retention_policy"].([]interface{})
