@@ -45,10 +45,11 @@ func resourceApiManagementCertificate() *schema.Resource {
 			"api_management_name": schemaz.SchemaApiManagementName(),
 
 			"data": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				Sensitive:    true,
-				ValidateFunc: validation.StringIsBase64,
+				Type:          schema.TypeString,
+				Optional:      true,
+				Sensitive:     true,
+				ValidateFunc:  validation.StringIsBase64,
+				ConflictsWith: []string{"key_vault_secret_id", "key_vault_identity_client_id"},
 			},
 
 			"password": {
