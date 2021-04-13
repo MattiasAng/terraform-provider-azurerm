@@ -68,6 +68,8 @@ func resourceAppServiceSlot() *schema.Resource {
 
 			"site_config": schemaAppServiceSiteConfig(),
 
+			"source_control": schemaAppServiceSiteSourceControl(),
+
 			"auth_settings": schemaAppServiceAuthSettings(),
 
 			"logs": schemaAppServiceLogsConfig(),
@@ -76,6 +78,11 @@ func resourceAppServiceSlot() *schema.Resource {
 				Type:     schema.TypeBool,
 				Optional: true,
 				Computed: true,
+			},
+
+			"client_cert_enabled": {
+				Type:     schema.TypeBool,
+				Optional: true,
 			},
 
 			"https_only": {
@@ -192,6 +199,7 @@ func resourceAppServiceSlotCreateUpdate(d *schema.ResourceData, meta interface{}
 	httpsOnly := d.Get("https_only").(bool)
 	t := d.Get("tags").(map[string]interface{})
 	affinity := d.Get("client_affinity_enabled").(bool)
+	clientCert := d.Get("client_cert_enabled").(bool)
 
 	siteConfig, err := expandAppServiceSiteConfig(d.Get("site_config"))
 	if err != nil {
@@ -206,6 +214,7 @@ func resourceAppServiceSlotCreateUpdate(d *schema.ResourceData, meta interface{}
 			HTTPSOnly:             utils.Bool(httpsOnly),
 			SiteConfig:            siteConfig,
 			ClientAffinityEnabled: &affinity,
+			ClientCertEnabled:     &clientCert,
 		},
 	}
 
@@ -223,6 +232,22 @@ func resourceAppServiceSlotCreateUpdate(d *schema.ResourceData, meta interface{}
 	err = createFuture.WaitForCompletionRef(ctx, client.Client)
 	if err != nil {
 		return fmt.Errorf("Error waiting for creation of Slot %q (App Service %q / Resource Group %q): %s", slot, appServiceName, resourceGroup, err)
+	}
+
+	if _, ok := d.GetOk("source_control"); ok {
+		sourceControlProperties := expandAppServiceSiteSourceControl(d)
+		sourceControl := &web.SiteSourceControl{}
+		sourceControl.SiteSourceControlProperties = sourceControlProperties
+
+		scFuture, err := client.CreateOrUpdateSourceControlSlot(ctx, resourceGroup, appServiceName, *sourceControl, slot)
+		if err != nil {
+			return fmt.Errorf("failed to create App Service Source Control for slot %q (App Service %q / Resource Group %q): %+v", slot, appServiceName, resourceGroup, err)
+		}
+
+		err = scFuture.WaitForCompletionRef(ctx, client.Client)
+		if err != nil {
+			return fmt.Errorf("failed waiting for App Service Slot Source Control configuration")
+		}
 	}
 
 	read, err := client.GetSlot(ctx, resourceGroup, appServiceName, slot)
@@ -273,6 +298,12 @@ func resourceAppServiceSlotUpdate(d *schema.ResourceData, meta interface{}) erro
 		enabled := v.(bool)
 		siteEnvelope.SiteProperties.ClientAffinityEnabled = utils.Bool(enabled)
 	}
+
+	if v, ok := d.GetOk("client_cert_enabled"); ok {
+		enabled := v.(bool)
+		siteEnvelope.SiteProperties.ClientCertEnabled = utils.Bool(enabled)
+	}
+
 	createFuture, err := client.CreateOrUpdateSlot(ctx, id.ResourceGroup, id.SiteName, siteEnvelope, id.SlotName)
 	if err != nil {
 		return fmt.Errorf("Error updating Slot %q (App Service %q / Resource Group %q): %s", id.SlotName, id.SiteName, id.ResourceGroup, err)
@@ -283,7 +314,12 @@ func resourceAppServiceSlotUpdate(d *schema.ResourceData, meta interface{}) erro
 		return fmt.Errorf("Error waiting for update of Slot %q (App Service %q / Resource Group %q): %s", id.SlotName, id.SiteName, id.ResourceGroup, err)
 	}
 
-	if d.HasChange("site_config") {
+	// If `source_control` is defined, we need to set site_config.0.scm_type to "None" or we cannot update it
+	_, hasSourceControl := d.GetOk("source_control.0.repo_url")
+
+	scmType := web.ScmTypeNone
+
+	if d.HasChange("site_config") || hasSourceControl {
 		// update the main configuration
 		siteConfig, err := expandAppServiceSiteConfig(d.Get("site_config"))
 		if err != nil {
@@ -292,8 +328,35 @@ func resourceAppServiceSlotUpdate(d *schema.ResourceData, meta interface{}) erro
 		siteConfigResource := web.SiteConfigResource{
 			SiteConfig: siteConfig,
 		}
+
+		scmType = siteConfig.ScmType
+		// ScmType being set blocks the update of source_control in _most_ cases, ADO is an exception
+		if hasSourceControl && scmType != web.ScmTypeVSTSRM {
+			siteConfigResource.SiteConfig.ScmType = web.ScmTypeNone
+		}
+
 		if _, err := client.CreateOrUpdateConfigurationSlot(ctx, id.ResourceGroup, id.SiteName, siteConfigResource, id.SlotName); err != nil {
 			return fmt.Errorf("Error updating Configuration for App Service Slot %q/%q: %+v", id.SiteName, id.SlotName, err)
+		}
+	}
+
+	if hasSourceControl && scmType != web.ScmTypeVSTSRM {
+		sourceControlProperties := expandAppServiceSiteSourceControl(d)
+		sourceControl := &web.SiteSourceControl{}
+		sourceControl.SiteSourceControlProperties = sourceControlProperties
+		scFuture, err := client.CreateOrUpdateSourceControlSlot(ctx, id.ResourceGroup, id.SiteName, *sourceControl, id.SlotName)
+		if err != nil {
+			return fmt.Errorf("failed to update App Service Source Control for %q (Resource Group %q): %+v", id.SiteName, id.ResourceGroup, err)
+		}
+
+		err = scFuture.WaitForCompletionRef(ctx, client.Client)
+		if err != nil {
+			return fmt.Errorf("failed waiting for App Service Source Control configuration: %+v", err)
+		}
+
+		sc, err := client.GetSourceControlSlot(ctx, id.ResourceGroup, id.SiteName, id.SlotName)
+		if err != nil {
+			return fmt.Errorf("failed reading back App Service Source Control for %q", *sc.Name)
 		}
 	}
 
@@ -426,6 +489,11 @@ func resourceAppServiceSlotRead(d *schema.ResourceData, meta interface{}) error 
 		return fmt.Errorf("Error listing Connection Strings for Slot %q (App Service %q / Resource Group %q): %s", id.SlotName, id.SiteName, id.ResourceGroup, err)
 	}
 
+	scmResp, err := client.GetSourceControlSlot(ctx, id.ResourceGroup, id.SiteName, id.SlotName)
+	if err != nil {
+		return fmt.Errorf("Error retreiving Source Control settings for Slot %q (App Service %q / Resource Group %q): %s", id.SlotName, id.SiteName, id.ResourceGroup, err)
+	}
+
 	siteCredFuture, err := client.ListPublishingCredentialsSlot(ctx, id.ResourceGroup, id.SiteName, id.SlotName)
 	if err != nil {
 		return fmt.Errorf("Error retrieving publishing credentials for Slot %q (App Service %q / Resource Group %q): %s", id.SlotName, id.SiteName, id.ResourceGroup, err)
@@ -449,6 +517,7 @@ func resourceAppServiceSlotRead(d *schema.ResourceData, meta interface{}) error 
 	if props := resp.SiteProperties; props != nil {
 		d.Set("app_service_plan_id", props.ServerFarmID)
 		d.Set("client_affinity_enabled", props.ClientAffinityEnabled)
+		d.Set("client_cert_enabled", props.ClientCertEnabled)
 		d.Set("default_site_hostname", props.DefaultHostName)
 		d.Set("enabled", props.Enabled)
 		d.Set("https_only", props.HTTPSOnly)
@@ -478,6 +547,11 @@ func resourceAppServiceSlotRead(d *schema.ResourceData, meta interface{}) error 
 	logs := flattenAppServiceLogs(logsResp.SiteLogsConfigProperties)
 	if err := d.Set("logs", logs); err != nil {
 		return fmt.Errorf("Error setting `logs`: %s", err)
+	}
+
+	scm := flattenAppServiceSourceControl(scmResp.SiteSourceControlProperties)
+	if err := d.Set("source_control", scm); err != nil {
+		return fmt.Errorf("Error setting `source_control`: %s", err)
 	}
 
 	identity, err := flattenAppServiceIdentity(resp.Identity)
