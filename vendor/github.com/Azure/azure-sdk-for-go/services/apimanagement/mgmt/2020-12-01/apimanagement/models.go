@@ -20,6 +20,7 @@ import (
 
 // The package's fully qualified name.
 const fqdn = "github.com/Azure/azure-sdk-for-go/services/apimanagement/mgmt/2020-12-01/apimanagement"
+<<<<<<< HEAD:vendor/github.com/Azure/azure-sdk-for-go/services/apimanagement/mgmt/2020-12-01/apimanagement/models.go
 
 // AccessInformationCollection paged AccessInformation list representation.
 type AccessInformationCollection struct {
@@ -192,6 +193,180 @@ func NewAccessInformationCollectionPage(cur AccessInformationCollection, getNext
 	}
 }
 
+=======
+
+// AccessInformationCollection paged AccessInformation list representation.
+type AccessInformationCollection struct {
+	autorest.Response `json:"-"`
+	// Value - READ-ONLY; Page values.
+	Value *[]AccessInformationContract `json:"value,omitempty"`
+	// Count - Total record count number across all pages.
+	Count *int64 `json:"count,omitempty"`
+	// NextLink - READ-ONLY; Next page link if any.
+	NextLink *string `json:"nextLink,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for AccessInformationCollection.
+func (aic AccessInformationCollection) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if aic.Count != nil {
+		objectMap["count"] = aic.Count
+	}
+	return json.Marshal(objectMap)
+}
+
+// AccessInformationCollectionIterator provides access to a complete listing of AccessInformationContract
+// values.
+type AccessInformationCollectionIterator struct {
+	i    int
+	page AccessInformationCollectionPage
+}
+
+// NextWithContext advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+func (iter *AccessInformationCollectionIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AccessInformationCollectionIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	iter.i++
+	if iter.i < len(iter.page.Values()) {
+		return nil
+	}
+	err = iter.page.NextWithContext(ctx)
+	if err != nil {
+		iter.i--
+		return err
+	}
+	iter.i = 0
+	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *AccessInformationCollectionIterator) Next() error {
+	return iter.NextWithContext(context.Background())
+}
+
+// NotDone returns true if the enumeration should be started or is not yet complete.
+func (iter AccessInformationCollectionIterator) NotDone() bool {
+	return iter.page.NotDone() && iter.i < len(iter.page.Values())
+}
+
+// Response returns the raw server response from the last page request.
+func (iter AccessInformationCollectionIterator) Response() AccessInformationCollection {
+	return iter.page.Response()
+}
+
+// Value returns the current value or a zero-initialized value if the
+// iterator has advanced beyond the end of the collection.
+func (iter AccessInformationCollectionIterator) Value() AccessInformationContract {
+	if !iter.page.NotDone() {
+		return AccessInformationContract{}
+	}
+	return iter.page.Values()[iter.i]
+}
+
+// Creates a new instance of the AccessInformationCollectionIterator type.
+func NewAccessInformationCollectionIterator(page AccessInformationCollectionPage) AccessInformationCollectionIterator {
+	return AccessInformationCollectionIterator{page: page}
+}
+
+// IsEmpty returns true if the ListResult contains no values.
+func (aic AccessInformationCollection) IsEmpty() bool {
+	return aic.Value == nil || len(*aic.Value) == 0
+}
+
+// hasNextLink returns true if the NextLink is not empty.
+func (aic AccessInformationCollection) hasNextLink() bool {
+	return aic.NextLink != nil && len(*aic.NextLink) != 0
+}
+
+// accessInformationCollectionPreparer prepares a request to retrieve the next set of results.
+// It returns nil if no more results exist.
+func (aic AccessInformationCollection) accessInformationCollectionPreparer(ctx context.Context) (*http.Request, error) {
+	if !aic.hasNextLink() {
+		return nil, nil
+	}
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
+		autorest.AsJSON(),
+		autorest.AsGet(),
+		autorest.WithBaseURL(to.String(aic.NextLink)))
+}
+
+// AccessInformationCollectionPage contains a page of AccessInformationContract values.
+type AccessInformationCollectionPage struct {
+	fn  func(context.Context, AccessInformationCollection) (AccessInformationCollection, error)
+	aic AccessInformationCollection
+}
+
+// NextWithContext advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+func (page *AccessInformationCollectionPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/AccessInformationCollectionPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	for {
+		next, err := page.fn(ctx, page.aic)
+		if err != nil {
+			return err
+		}
+		page.aic = next
+		if !next.hasNextLink() || !next.IsEmpty() {
+			break
+		}
+	}
+	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *AccessInformationCollectionPage) Next() error {
+	return page.NextWithContext(context.Background())
+}
+
+// NotDone returns true if the page enumeration should be started or is not yet complete.
+func (page AccessInformationCollectionPage) NotDone() bool {
+	return !page.aic.IsEmpty()
+}
+
+// Response returns the raw server response from the last page request.
+func (page AccessInformationCollectionPage) Response() AccessInformationCollection {
+	return page.aic
+}
+
+// Values returns the slice of values for the current page or nil if there are no values.
+func (page AccessInformationCollectionPage) Values() []AccessInformationContract {
+	if page.aic.IsEmpty() {
+		return nil
+	}
+	return *page.aic.Value
+}
+
+// Creates a new instance of the AccessInformationCollectionPage type.
+func NewAccessInformationCollectionPage(cur AccessInformationCollection, getNextPage func(context.Context, AccessInformationCollection) (AccessInformationCollection, error)) AccessInformationCollectionPage {
+	return AccessInformationCollectionPage{
+		fn:  getNextPage,
+		aic: cur,
+	}
+}
+
+>>>>>>> 45aaf0a2ea7831456cec42048f4b569f452950cb:vendor/github.com/Azure/azure-sdk-for-go/services/apimanagement/mgmt/2019-12-01/apimanagement/models.go
 // AccessInformationContract tenant Settings.
 type AccessInformationContract struct {
 	autorest.Response `json:"-"`
@@ -5275,6 +5450,258 @@ func (gcac GatewayCertificateAuthorityCollection) hasNextLink() bool {
 }
 
 // gatewayCertificateAuthorityCollectionPreparer prepares a request to retrieve the next set of results.
+<<<<<<< HEAD:vendor/github.com/Azure/azure-sdk-for-go/services/apimanagement/mgmt/2020-12-01/apimanagement/models.go
+// It returns nil if no more results exist.
+func (gcac GatewayCertificateAuthorityCollection) gatewayCertificateAuthorityCollectionPreparer(ctx context.Context) (*http.Request, error) {
+	if !gcac.hasNextLink() {
+		return nil, nil
+	}
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
+		autorest.AsJSON(),
+		autorest.AsGet(),
+		autorest.WithBaseURL(to.String(gcac.NextLink)))
+}
+
+// GatewayCertificateAuthorityCollectionPage contains a page of GatewayCertificateAuthorityContract values.
+type GatewayCertificateAuthorityCollectionPage struct {
+	fn   func(context.Context, GatewayCertificateAuthorityCollection) (GatewayCertificateAuthorityCollection, error)
+	gcac GatewayCertificateAuthorityCollection
+}
+
+// NextWithContext advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+func (page *GatewayCertificateAuthorityCollectionPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/GatewayCertificateAuthorityCollectionPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	for {
+		next, err := page.fn(ctx, page.gcac)
+		if err != nil {
+			return err
+		}
+		page.gcac = next
+		if !next.hasNextLink() || !next.IsEmpty() {
+			break
+		}
+	}
+	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *GatewayCertificateAuthorityCollectionPage) Next() error {
+	return page.NextWithContext(context.Background())
+}
+
+// NotDone returns true if the page enumeration should be started or is not yet complete.
+func (page GatewayCertificateAuthorityCollectionPage) NotDone() bool {
+	return !page.gcac.IsEmpty()
+}
+
+// Response returns the raw server response from the last page request.
+func (page GatewayCertificateAuthorityCollectionPage) Response() GatewayCertificateAuthorityCollection {
+	return page.gcac
+}
+
+// Values returns the slice of values for the current page or nil if there are no values.
+func (page GatewayCertificateAuthorityCollectionPage) Values() []GatewayCertificateAuthorityContract {
+	if page.gcac.IsEmpty() {
+		return nil
+	}
+	return *page.gcac.Value
+}
+
+// Creates a new instance of the GatewayCertificateAuthorityCollectionPage type.
+func NewGatewayCertificateAuthorityCollectionPage(cur GatewayCertificateAuthorityCollection, getNextPage func(context.Context, GatewayCertificateAuthorityCollection) (GatewayCertificateAuthorityCollection, error)) GatewayCertificateAuthorityCollectionPage {
+	return GatewayCertificateAuthorityCollectionPage{
+		fn:   getNextPage,
+		gcac: cur,
+	}
+}
+
+// GatewayCertificateAuthorityContract gateway certificate authority details.
+type GatewayCertificateAuthorityContract struct {
+	autorest.Response `json:"-"`
+	// GatewayCertificateAuthorityContractProperties - Gateway certificate authority details.
+	*GatewayCertificateAuthorityContractProperties `json:"properties,omitempty"`
+	// ID - READ-ONLY; Resource ID.
+	ID *string `json:"id,omitempty"`
+	// Name - READ-ONLY; Resource name.
+	Name *string `json:"name,omitempty"`
+	// Type - READ-ONLY; Resource type for API Management resource.
+	Type *string `json:"type,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for GatewayCertificateAuthorityContract.
+func (gcac GatewayCertificateAuthorityContract) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if gcac.GatewayCertificateAuthorityContractProperties != nil {
+		objectMap["properties"] = gcac.GatewayCertificateAuthorityContractProperties
+	}
+	return json.Marshal(objectMap)
+}
+
+// UnmarshalJSON is the custom unmarshaler for GatewayCertificateAuthorityContract struct.
+func (gcac *GatewayCertificateAuthorityContract) UnmarshalJSON(body []byte) error {
+	var m map[string]*json.RawMessage
+	err := json.Unmarshal(body, &m)
+	if err != nil {
+		return err
+	}
+	for k, v := range m {
+		switch k {
+		case "properties":
+			if v != nil {
+				var gatewayCertificateAuthorityContractProperties GatewayCertificateAuthorityContractProperties
+				err = json.Unmarshal(*v, &gatewayCertificateAuthorityContractProperties)
+				if err != nil {
+					return err
+				}
+				gcac.GatewayCertificateAuthorityContractProperties = &gatewayCertificateAuthorityContractProperties
+			}
+		case "id":
+			if v != nil {
+				var ID string
+				err = json.Unmarshal(*v, &ID)
+				if err != nil {
+					return err
+				}
+				gcac.ID = &ID
+			}
+		case "name":
+			if v != nil {
+				var name string
+				err = json.Unmarshal(*v, &name)
+				if err != nil {
+					return err
+				}
+				gcac.Name = &name
+			}
+		case "type":
+			if v != nil {
+				var typeVar string
+				err = json.Unmarshal(*v, &typeVar)
+				if err != nil {
+					return err
+				}
+				gcac.Type = &typeVar
+			}
+		}
+	}
+
+	return nil
+}
+
+// GatewayCertificateAuthorityContractProperties gateway certificate authority details.
+type GatewayCertificateAuthorityContractProperties struct {
+	// IsTrusted - Determines whether certificate authority is trusted.
+	IsTrusted *bool `json:"isTrusted,omitempty"`
+}
+
+// GatewayCollection paged Gateway list representation.
+type GatewayCollection struct {
+	autorest.Response `json:"-"`
+	// Value - READ-ONLY; Page values.
+	Value *[]GatewayContract `json:"value,omitempty"`
+	// Count - Total record count number across all pages.
+	Count *int64 `json:"count,omitempty"`
+	// NextLink - READ-ONLY; Next page link if any.
+	NextLink *string `json:"nextLink,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for GatewayCollection.
+func (gc GatewayCollection) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if gc.Count != nil {
+		objectMap["count"] = gc.Count
+	}
+	return json.Marshal(objectMap)
+}
+
+// GatewayCollectionIterator provides access to a complete listing of GatewayContract values.
+type GatewayCollectionIterator struct {
+	i    int
+	page GatewayCollectionPage
+}
+
+// NextWithContext advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+func (iter *GatewayCollectionIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/GatewayCollectionIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	iter.i++
+	if iter.i < len(iter.page.Values()) {
+		return nil
+	}
+	err = iter.page.NextWithContext(ctx)
+	if err != nil {
+		iter.i--
+		return err
+	}
+	iter.i = 0
+	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *GatewayCollectionIterator) Next() error {
+	return iter.NextWithContext(context.Background())
+}
+
+// NotDone returns true if the enumeration should be started or is not yet complete.
+func (iter GatewayCollectionIterator) NotDone() bool {
+	return iter.page.NotDone() && iter.i < len(iter.page.Values())
+}
+
+// Response returns the raw server response from the last page request.
+func (iter GatewayCollectionIterator) Response() GatewayCollection {
+	return iter.page.Response()
+}
+
+// Value returns the current value or a zero-initialized value if the
+// iterator has advanced beyond the end of the collection.
+func (iter GatewayCollectionIterator) Value() GatewayContract {
+	if !iter.page.NotDone() {
+		return GatewayContract{}
+	}
+	return iter.page.Values()[iter.i]
+}
+
+// Creates a new instance of the GatewayCollectionIterator type.
+func NewGatewayCollectionIterator(page GatewayCollectionPage) GatewayCollectionIterator {
+	return GatewayCollectionIterator{page: page}
+}
+
+// IsEmpty returns true if the ListResult contains no values.
+func (gc GatewayCollection) IsEmpty() bool {
+	return gc.Value == nil || len(*gc.Value) == 0
+}
+
+// hasNextLink returns true if the NextLink is not empty.
+func (gc GatewayCollection) hasNextLink() bool {
+	return gc.NextLink != nil && len(*gc.NextLink) != 0
+}
+
+// gatewayCollectionPreparer prepares a request to retrieve the next set of results.
+=======
+>>>>>>> 45aaf0a2ea7831456cec42048f4b569f452950cb:vendor/github.com/Azure/azure-sdk-for-go/services/apimanagement/mgmt/2019-12-01/apimanagement/models.go
 // It returns nil if no more results exist.
 func (gcac GatewayCertificateAuthorityCollection) gatewayCertificateAuthorityCollectionPreparer(ctx context.Context) (*http.Request, error) {
 	if !gcac.hasNextLink() {
@@ -8400,6 +8827,25 @@ type NamedValueEntityBaseParameters struct {
 }
 
 // NamedValueRefreshSecretFuture an abstraction for monitoring and retrieving the results of a long-running
+<<<<<<< HEAD:vendor/github.com/Azure/azure-sdk-for-go/services/apimanagement/mgmt/2020-12-01/apimanagement/models.go
+=======
+// operation.
+type NamedValueRefreshSecretFuture struct {
+	azure.FutureAPI
+	// Result returns the result of the asynchronous operation.
+	// If the operation has not completed it will return an error.
+	Result func(NamedValueClient) (NamedValueContract, error)
+}
+
+// NamedValueSecretContract client or app secret used in IdentityProviders, Aad, OpenID or OAuth.
+type NamedValueSecretContract struct {
+	autorest.Response `json:"-"`
+	// Value - This is secret value of the NamedValue entity.
+	Value *string `json:"value,omitempty"`
+}
+
+// NamedValueUpdateFuture an abstraction for monitoring and retrieving the results of a long-running
+>>>>>>> 45aaf0a2ea7831456cec42048f4b569f452950cb:vendor/github.com/Azure/azure-sdk-for-go/services/apimanagement/mgmt/2019-12-01/apimanagement/models.go
 // operation.
 type NamedValueRefreshSecretFuture struct {
 	azure.FutureAPI
@@ -9895,6 +10341,7 @@ type PolicyDescriptionContractProperties struct {
 	Description *string `json:"description,omitempty"`
 	// Scope - READ-ONLY; Binary OR value of the Snippet scope.
 	Scope *int64 `json:"scope,omitempty"`
+<<<<<<< HEAD:vendor/github.com/Azure/azure-sdk-for-go/services/apimanagement/mgmt/2020-12-01/apimanagement/models.go
 }
 
 // PortalDelegationSettings delegation settings for a developer portal.
@@ -9980,6 +10427,383 @@ type PortalDelegationSettingsProperties struct {
 	Subscriptions *SubscriptionsDelegationSettingsProperties `json:"subscriptions,omitempty"`
 	// UserRegistration - User registration delegation settings.
 	UserRegistration *RegistrationDelegationSettingsProperties `json:"userRegistration,omitempty"`
+}
+
+// PortalRevisionCollection paged list of portal revisions.
+type PortalRevisionCollection struct {
+	autorest.Response `json:"-"`
+	// Value - READ-ONLY; Collection of portal revisions.
+	Value *[]PortalRevisionContract `json:"value,omitempty"`
+	// NextLink - READ-ONLY; Next page link, if any.
+	NextLink *string `json:"nextLink,omitempty"`
+}
+
+// PortalRevisionCollectionIterator provides access to a complete listing of PortalRevisionContract values.
+type PortalRevisionCollectionIterator struct {
+	i    int
+	page PortalRevisionCollectionPage
+}
+
+// NextWithContext advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+func (iter *PortalRevisionCollectionIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/PortalRevisionCollectionIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	iter.i++
+	if iter.i < len(iter.page.Values()) {
+		return nil
+	}
+	err = iter.page.NextWithContext(ctx)
+	if err != nil {
+		iter.i--
+		return err
+	}
+	iter.i = 0
+	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *PortalRevisionCollectionIterator) Next() error {
+	return iter.NextWithContext(context.Background())
+}
+
+// NotDone returns true if the enumeration should be started or is not yet complete.
+func (iter PortalRevisionCollectionIterator) NotDone() bool {
+	return iter.page.NotDone() && iter.i < len(iter.page.Values())
+}
+
+// Response returns the raw server response from the last page request.
+func (iter PortalRevisionCollectionIterator) Response() PortalRevisionCollection {
+	return iter.page.Response()
+}
+
+// Value returns the current value or a zero-initialized value if the
+// iterator has advanced beyond the end of the collection.
+func (iter PortalRevisionCollectionIterator) Value() PortalRevisionContract {
+	if !iter.page.NotDone() {
+		return PortalRevisionContract{}
+	}
+	return iter.page.Values()[iter.i]
+}
+
+// Creates a new instance of the PortalRevisionCollectionIterator type.
+func NewPortalRevisionCollectionIterator(page PortalRevisionCollectionPage) PortalRevisionCollectionIterator {
+	return PortalRevisionCollectionIterator{page: page}
+}
+
+// IsEmpty returns true if the ListResult contains no values.
+func (prc PortalRevisionCollection) IsEmpty() bool {
+	return prc.Value == nil || len(*prc.Value) == 0
+}
+
+// hasNextLink returns true if the NextLink is not empty.
+func (prc PortalRevisionCollection) hasNextLink() bool {
+	return prc.NextLink != nil && len(*prc.NextLink) != 0
+}
+
+// portalRevisionCollectionPreparer prepares a request to retrieve the next set of results.
+// It returns nil if no more results exist.
+func (prc PortalRevisionCollection) portalRevisionCollectionPreparer(ctx context.Context) (*http.Request, error) {
+	if !prc.hasNextLink() {
+		return nil, nil
+	}
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
+		autorest.AsJSON(),
+		autorest.AsGet(),
+		autorest.WithBaseURL(to.String(prc.NextLink)))
+}
+
+// PortalRevisionCollectionPage contains a page of PortalRevisionContract values.
+type PortalRevisionCollectionPage struct {
+	fn  func(context.Context, PortalRevisionCollection) (PortalRevisionCollection, error)
+	prc PortalRevisionCollection
+}
+
+// NextWithContext advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+func (page *PortalRevisionCollectionPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/PortalRevisionCollectionPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	for {
+		next, err := page.fn(ctx, page.prc)
+		if err != nil {
+			return err
+		}
+		page.prc = next
+		if !next.hasNextLink() || !next.IsEmpty() {
+			break
+		}
+	}
+	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *PortalRevisionCollectionPage) Next() error {
+	return page.NextWithContext(context.Background())
+}
+
+// NotDone returns true if the page enumeration should be started or is not yet complete.
+func (page PortalRevisionCollectionPage) NotDone() bool {
+	return !page.prc.IsEmpty()
+}
+
+// Response returns the raw server response from the last page request.
+func (page PortalRevisionCollectionPage) Response() PortalRevisionCollection {
+	return page.prc
+}
+
+// Values returns the slice of values for the current page or nil if there are no values.
+func (page PortalRevisionCollectionPage) Values() []PortalRevisionContract {
+	if page.prc.IsEmpty() {
+		return nil
+	}
+	return *page.prc.Value
+}
+
+// Creates a new instance of the PortalRevisionCollectionPage type.
+func NewPortalRevisionCollectionPage(cur PortalRevisionCollection, getNextPage func(context.Context, PortalRevisionCollection) (PortalRevisionCollection, error)) PortalRevisionCollectionPage {
+	return PortalRevisionCollectionPage{
+		fn:  getNextPage,
+		prc: cur,
+	}
+}
+
+// PortalRevisionContract portal revisions contract details.
+type PortalRevisionContract struct {
+	autorest.Response `json:"-"`
+	// PortalRevisionContractProperties - Properties of the portal revisions.
+	*PortalRevisionContractProperties `json:"properties,omitempty"`
+	// ID - READ-ONLY; Resource ID.
+	ID *string `json:"id,omitempty"`
+	// Name - READ-ONLY; Resource name.
+	Name *string `json:"name,omitempty"`
+	// Type - READ-ONLY; Resource type for API Management resource.
+	Type *string `json:"type,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for PortalRevisionContract.
+func (prc PortalRevisionContract) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if prc.PortalRevisionContractProperties != nil {
+		objectMap["properties"] = prc.PortalRevisionContractProperties
+	}
+	return json.Marshal(objectMap)
+}
+
+// UnmarshalJSON is the custom unmarshaler for PortalRevisionContract struct.
+func (prc *PortalRevisionContract) UnmarshalJSON(body []byte) error {
+	var m map[string]*json.RawMessage
+	err := json.Unmarshal(body, &m)
+	if err != nil {
+		return err
+	}
+	for k, v := range m {
+		switch k {
+		case "properties":
+			if v != nil {
+				var portalRevisionContractProperties PortalRevisionContractProperties
+				err = json.Unmarshal(*v, &portalRevisionContractProperties)
+				if err != nil {
+					return err
+				}
+				prc.PortalRevisionContractProperties = &portalRevisionContractProperties
+			}
+		case "id":
+			if v != nil {
+				var ID string
+				err = json.Unmarshal(*v, &ID)
+				if err != nil {
+					return err
+				}
+				prc.ID = &ID
+			}
+		case "name":
+			if v != nil {
+				var name string
+				err = json.Unmarshal(*v, &name)
+				if err != nil {
+					return err
+				}
+				prc.Name = &name
+			}
+		case "type":
+			if v != nil {
+				var typeVar string
+				err = json.Unmarshal(*v, &typeVar)
+				if err != nil {
+					return err
+				}
+				prc.Type = &typeVar
+			}
+		}
+	}
+
+	return nil
+}
+
+// PortalRevisionContractProperties ...
+type PortalRevisionContractProperties struct {
+	// Description - Portal revision description.
+	Description *string `json:"description,omitempty"`
+	// StatusDetails - READ-ONLY; Portal revision publishing status details.
+	StatusDetails *string `json:"statusDetails,omitempty"`
+	// Status - READ-ONLY; Portal revision publishing status. Possible values include: 'PortalRevisionStatusPending', 'PortalRevisionStatusPublishing', 'PortalRevisionStatusCompleted', 'PortalRevisionStatusFailed'
+	Status PortalRevisionStatus `json:"status,omitempty"`
+	// IsCurrent - Indicates if the Portal Revision is public.
+	IsCurrent *bool `json:"isCurrent,omitempty"`
+	// CreatedDateTime - READ-ONLY; Portal revision creation date and time.
+	CreatedDateTime *date.Time `json:"createdDateTime,omitempty"`
+	// UpdatedDateTime - READ-ONLY; Last updated date and time.
+	UpdatedDateTime *date.Time `json:"updatedDateTime,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for PortalRevisionContractProperties.
+func (prcp PortalRevisionContractProperties) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if prcp.Description != nil {
+		objectMap["description"] = prcp.Description
+	}
+	if prcp.IsCurrent != nil {
+		objectMap["isCurrent"] = prcp.IsCurrent
+	}
+	return json.Marshal(objectMap)
+}
+
+// PortalRevisionCreateOrUpdateFuture an abstraction for monitoring and retrieving the results of a
+// long-running operation.
+type PortalRevisionCreateOrUpdateFuture struct {
+	azure.FutureAPI
+	// Result returns the result of the asynchronous operation.
+	// If the operation has not completed it will return an error.
+	Result func(PortalRevisionClient) (PortalRevisionContract, error)
+}
+
+// PortalRevisionUpdateFuture an abstraction for monitoring and retrieving the results of a long-running
+// operation.
+type PortalRevisionUpdateFuture struct {
+	azure.FutureAPI
+	// Result returns the result of the asynchronous operation.
+	// If the operation has not completed it will return an error.
+	Result func(PortalRevisionClient) (PortalRevisionContract, error)
+}
+
+// PortalSettingsCollection descriptions of APIM policies.
+type PortalSettingsCollection struct {
+	autorest.Response `json:"-"`
+	// Value - Descriptions of APIM policies.
+	Value *[]PortalSettingsContract `json:"value,omitempty"`
+	// Count - Total record count number.
+	Count *int64 `json:"count,omitempty"`
+=======
+>>>>>>> 45aaf0a2ea7831456cec42048f4b569f452950cb:vendor/github.com/Azure/azure-sdk-for-go/services/apimanagement/mgmt/2019-12-01/apimanagement/models.go
+}
+
+// PortalSettingsContract portal Settings for the Developer Portal.
+type PortalSettingsContract struct {
+	// PortalSettingsContractProperties - Portal Settings contract properties.
+	*PortalSettingsContractProperties `json:"properties,omitempty"`
+	// ID - READ-ONLY; Resource ID.
+	ID *string `json:"id,omitempty"`
+	// Name - READ-ONLY; Resource name.
+	Name *string `json:"name,omitempty"`
+	// Type - READ-ONLY; Resource type for API Management resource.
+	Type *string `json:"type,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for PortalSettingsContract.
+func (psc PortalSettingsContract) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if psc.PortalSettingsContractProperties != nil {
+		objectMap["properties"] = psc.PortalSettingsContractProperties
+	}
+	return json.Marshal(objectMap)
+}
+
+// UnmarshalJSON is the custom unmarshaler for PortalSettingsContract struct.
+func (psc *PortalSettingsContract) UnmarshalJSON(body []byte) error {
+	var m map[string]*json.RawMessage
+	err := json.Unmarshal(body, &m)
+	if err != nil {
+		return err
+	}
+	for k, v := range m {
+		switch k {
+		case "properties":
+			if v != nil {
+				var portalSettingsContractProperties PortalSettingsContractProperties
+				err = json.Unmarshal(*v, &portalSettingsContractProperties)
+				if err != nil {
+					return err
+				}
+				psc.PortalSettingsContractProperties = &portalSettingsContractProperties
+			}
+		case "id":
+			if v != nil {
+				var ID string
+				err = json.Unmarshal(*v, &ID)
+				if err != nil {
+					return err
+				}
+				psc.ID = &ID
+			}
+		case "name":
+			if v != nil {
+				var name string
+				err = json.Unmarshal(*v, &name)
+				if err != nil {
+					return err
+				}
+				psc.Name = &name
+			}
+		case "type":
+			if v != nil {
+				var typeVar string
+				err = json.Unmarshal(*v, &typeVar)
+				if err != nil {
+					return err
+				}
+				psc.Type = &typeVar
+			}
+		}
+	}
+
+	return nil
+}
+
+// PortalSettingsContractProperties sign-in settings contract properties.
+type PortalSettingsContractProperties struct {
+	// URL - A delegation Url.
+	URL *string `json:"url,omitempty"`
+	// ValidationKey - A base64-encoded validation key to validate, that a request is coming from Azure API Management.
+	ValidationKey *string `json:"validationKey,omitempty"`
+	// Subscriptions - Subscriptions delegation settings.
+	Subscriptions *SubscriptionsDelegationSettingsProperties `json:"subscriptions,omitempty"`
+	// UserRegistration - User registration delegation settings.
+	UserRegistration *RegistrationDelegationSettingsProperties `json:"userRegistration,omitempty"`
+	// Enabled - Redirect Anonymous users to the Sign-In page.
+	Enabled *bool `json:"enabled,omitempty"`
+	// TermsOfService - Terms of service contract properties.
+	TermsOfService *TermsOfServiceProperties `json:"termsOfService,omitempty"`
 }
 
 // PortalRevisionCollection paged list of portal revisions.
@@ -10360,8 +11184,17 @@ type PortalSettingsContractProperties struct {
 // PortalSettingValidationKeyContract client or app secret used in IdentityProviders, Aad, OpenID or OAuth.
 type PortalSettingValidationKeyContract struct {
 	autorest.Response `json:"-"`
+<<<<<<< HEAD:vendor/github.com/Azure/azure-sdk-for-go/services/apimanagement/mgmt/2020-12-01/apimanagement/models.go
+	// Value - Page values.
+	Value *[]ProductContract `json:"value,omitempty"`
+	// Count - Total record count number across all pages.
+	Count *int64 `json:"count,omitempty"`
+	// NextLink - Next page link if any.
+	NextLink *string `json:"nextLink,omitempty"`
+=======
 	// ValidationKey - This is secret value of the validation key in portal settings.
 	ValidationKey *string `json:"validationKey,omitempty"`
+>>>>>>> 45aaf0a2ea7831456cec42048f4b569f452950cb:vendor/github.com/Azure/azure-sdk-for-go/services/apimanagement/mgmt/2019-12-01/apimanagement/models.go
 }
 
 // PortalSigninSettingProperties sign-in settings contract properties.
@@ -12610,6 +13443,7 @@ type ServiceDeleteFuture struct {
 	Result func(ServiceClient) (ServiceResource, error)
 }
 
+<<<<<<< HEAD:vendor/github.com/Azure/azure-sdk-for-go/services/apimanagement/mgmt/2020-12-01/apimanagement/models.go
 <<<<<<< HEAD:vendor/github.com/Azure/azure-sdk-for-go/services/apimanagement/mgmt/2019-12-01/apimanagement/models.go
 // UnmarshalJSON is the custom unmarshaller for CreateFuture.
 func (future *ServiceDeleteFuture) UnmarshalJSON(body []byte) error {
@@ -12643,12 +13477,17 @@ func (future *ServiceDeleteFuture) result(client ServiceClient) (sr ServiceResou
 	}
 	return
 =======
+=======
+>>>>>>> 45aaf0a2ea7831456cec42048f4b569f452950cb:vendor/github.com/Azure/azure-sdk-for-go/services/apimanagement/mgmt/2019-12-01/apimanagement/models.go
 // ServiceGetDomainOwnershipIdentifierResult response of the GetDomainOwnershipIdentifier operation.
 type ServiceGetDomainOwnershipIdentifierResult struct {
 	autorest.Response `json:"-"`
 	// DomainOwnershipIdentifier - READ-ONLY; The domain ownership identifier value.
 	DomainOwnershipIdentifier *string `json:"domainOwnershipIdentifier,omitempty"`
+<<<<<<< HEAD:vendor/github.com/Azure/azure-sdk-for-go/services/apimanagement/mgmt/2020-12-01/apimanagement/models.go
 >>>>>>> updated apimanagement sdk:vendor/github.com/Azure/azure-sdk-for-go/services/apimanagement/mgmt/2020-12-01/apimanagement/models.go
+=======
+>>>>>>> 45aaf0a2ea7831456cec42048f4b569f452950cb:vendor/github.com/Azure/azure-sdk-for-go/services/apimanagement/mgmt/2019-12-01/apimanagement/models.go
 }
 
 // ServiceGetSsoTokenResult the response of the GetSsoToken operation.
@@ -13525,6 +14364,287 @@ type SkusResult struct {
 	// Value - The list of skus available for the subscription.
 	Value *[]Sku `json:"value,omitempty"`
 	// NextLink - READ-ONLY; The URI to fetch the next page of Resource Skus. Call ListNext() with this URI to fetch the next page of Resource Skus
+	NextLink *string `json:"nextLink,omitempty"`
+}
+
+// MarshalJSON is the custom marshaler for SkusResult.
+func (sr SkusResult) MarshalJSON() ([]byte, error) {
+	objectMap := make(map[string]interface{})
+	if sr.Value != nil {
+		objectMap["value"] = sr.Value
+	}
+	return json.Marshal(objectMap)
+}
+
+// SkusResultIterator provides access to a complete listing of Sku values.
+type SkusResultIterator struct {
+	i    int
+	page SkusResultPage
+}
+
+// NextWithContext advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+func (iter *SkusResultIterator) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/SkusResultIterator.NextWithContext")
+		defer func() {
+			sc := -1
+			if iter.Response().Response.Response != nil {
+				sc = iter.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	iter.i++
+	if iter.i < len(iter.page.Values()) {
+		return nil
+	}
+	err = iter.page.NextWithContext(ctx)
+	if err != nil {
+		iter.i--
+		return err
+	}
+	iter.i = 0
+	return nil
+}
+
+// Next advances to the next value.  If there was an error making
+// the request the iterator does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (iter *SkusResultIterator) Next() error {
+	return iter.NextWithContext(context.Background())
+}
+
+// NotDone returns true if the enumeration should be started or is not yet complete.
+func (iter SkusResultIterator) NotDone() bool {
+	return iter.page.NotDone() && iter.i < len(iter.page.Values())
+}
+
+// Response returns the raw server response from the last page request.
+func (iter SkusResultIterator) Response() SkusResult {
+	return iter.page.Response()
+}
+
+// Value returns the current value or a zero-initialized value if the
+// iterator has advanced beyond the end of the collection.
+func (iter SkusResultIterator) Value() Sku {
+	if !iter.page.NotDone() {
+		return Sku{}
+	}
+	return iter.page.Values()[iter.i]
+}
+
+// Creates a new instance of the SkusResultIterator type.
+func NewSkusResultIterator(page SkusResultPage) SkusResultIterator {
+	return SkusResultIterator{page: page}
+}
+
+// IsEmpty returns true if the ListResult contains no values.
+func (sr SkusResult) IsEmpty() bool {
+	return sr.Value == nil || len(*sr.Value) == 0
+}
+
+// hasNextLink returns true if the NextLink is not empty.
+func (sr SkusResult) hasNextLink() bool {
+	return sr.NextLink != nil && len(*sr.NextLink) != 0
+}
+
+// skusResultPreparer prepares a request to retrieve the next set of results.
+// It returns nil if no more results exist.
+func (sr SkusResult) skusResultPreparer(ctx context.Context) (*http.Request, error) {
+	if !sr.hasNextLink() {
+		return nil, nil
+	}
+	return autorest.Prepare((&http.Request{}).WithContext(ctx),
+		autorest.AsJSON(),
+		autorest.AsGet(),
+		autorest.WithBaseURL(to.String(sr.NextLink)))
+}
+
+// SkusResultPage contains a page of Sku values.
+type SkusResultPage struct {
+	fn func(context.Context, SkusResult) (SkusResult, error)
+	sr SkusResult
+}
+
+// NextWithContext advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+func (page *SkusResultPage) NextWithContext(ctx context.Context) (err error) {
+	if tracing.IsEnabled() {
+		ctx = tracing.StartSpan(ctx, fqdn+"/SkusResultPage.NextWithContext")
+		defer func() {
+			sc := -1
+			if page.Response().Response.Response != nil {
+				sc = page.Response().Response.Response.StatusCode
+			}
+			tracing.EndSpan(ctx, sc, err)
+		}()
+	}
+	for {
+		next, err := page.fn(ctx, page.sr)
+		if err != nil {
+			return err
+		}
+		page.sr = next
+		if !next.hasNextLink() || !next.IsEmpty() {
+			break
+		}
+	}
+	return nil
+}
+
+// Next advances to the next page of values.  If there was an error making
+// the request the page does not advance and the error is returned.
+// Deprecated: Use NextWithContext() instead.
+func (page *SkusResultPage) Next() error {
+	return page.NextWithContext(context.Background())
+}
+
+// NotDone returns true if the page enumeration should be started or is not yet complete.
+func (page SkusResultPage) NotDone() bool {
+	return !page.sr.IsEmpty()
+}
+
+// Response returns the raw server response from the last page request.
+func (page SkusResultPage) Response() SkusResult {
+	return page.sr
+}
+
+// Values returns the slice of values for the current page or nil if there are no values.
+func (page SkusResultPage) Values() []Sku {
+	if page.sr.IsEmpty() {
+		return nil
+	}
+	return *page.sr.Value
+}
+
+// Creates a new instance of the SkusResultPage type.
+func NewSkusResultPage(cur SkusResult, getNextPage func(context.Context, SkusResult) (SkusResult, error)) SkusResultPage {
+	return SkusResultPage{
+		fn: getNextPage,
+		sr: cur,
+	}
+<<<<<<< HEAD:vendor/github.com/Azure/azure-sdk-for-go/services/apimanagement/mgmt/2020-12-01/apimanagement/models.go
+}
+
+// SkuZoneDetails describes The zonal capabilities of a SKU.
+type SkuZoneDetails struct {
+	// Name - READ-ONLY; The set of zones that the SKU is available in with the specified capabilities.
+	Name *[]string `json:"name,omitempty"`
+	// Capabilities - READ-ONLY; A list of capabilities that are available for the SKU in the specified list of zones.
+	Capabilities *[]SkuCapabilities `json:"capabilities,omitempty"`
+=======
+	if sup.Restore != nil {
+		objectMap["restore"] = sup.Restore
+	}
+	return json.Marshal(objectMap)
+>>>>>>> 45aaf0a2ea7831456cec42048f4b569f452950cb:vendor/github.com/Azure/azure-sdk-for-go/services/apimanagement/mgmt/2019-12-01/apimanagement/models.go
+}
+
+// Sku describes an available ApiManagement SKU.
+type Sku struct {
+	// ResourceType - READ-ONLY; The type of resource the SKU applies to.
+	ResourceType *string `json:"resourceType,omitempty"`
+	// Name - READ-ONLY; The name of SKU.
+	Name *string `json:"name,omitempty"`
+	// Tier - READ-ONLY; Specifies the tier of virtual machines in a scale set.<br /><br /> Possible Values:<br /><br /> **Standard**<br /><br /> **Basic**
+	Tier *string `json:"tier,omitempty"`
+	// Size - READ-ONLY; The Size of the SKU.
+	Size *string `json:"size,omitempty"`
+	// Family - READ-ONLY; The Family of this particular SKU.
+	Family *string `json:"family,omitempty"`
+	// Kind - READ-ONLY; The Kind of resources that are supported in this SKU.
+	Kind *string `json:"kind,omitempty"`
+	// Capacity - READ-ONLY; Specifies the number of virtual machines in the scale set.
+	Capacity *SkuCapacity `json:"capacity,omitempty"`
+	// Locations - READ-ONLY; The set of locations that the SKU is available.
+	Locations *[]string `json:"locations,omitempty"`
+	// LocationInfo - READ-ONLY; A list of locations and availability zones in those locations where the SKU is available.
+	LocationInfo *[]SkuLocationInfo `json:"locationInfo,omitempty"`
+	// APIVersions - READ-ONLY; The api versions that support this SKU.
+	APIVersions *[]string `json:"apiVersions,omitempty"`
+	// Costs - READ-ONLY; Metadata for retrieving price info.
+	Costs *[]SkuCosts `json:"costs,omitempty"`
+	// Capabilities - READ-ONLY; A name value pair to describe the capability.
+	Capabilities *[]SkuCapabilities `json:"capabilities,omitempty"`
+	// Restrictions - READ-ONLY; The restrictions because of which SKU cannot be used. This is empty if there are no restrictions.
+	Restrictions *[]SkuRestrictions `json:"restrictions,omitempty"`
+}
+
+// SkuCapabilities describes The SKU capabilities object.
+type SkuCapabilities struct {
+	// Name - READ-ONLY; An invariant to describe the feature.
+	Name *string `json:"name,omitempty"`
+	// Value - READ-ONLY; An invariant if the feature is measured by quantity.
+	Value *string `json:"value,omitempty"`
+}
+
+// SkuCapacity describes scaling information of a SKU.
+type SkuCapacity struct {
+	// Minimum - READ-ONLY; The minimum capacity.
+	Minimum *int32 `json:"minimum,omitempty"`
+	// Maximum - READ-ONLY; The maximum capacity that can be set.
+	Maximum *int32 `json:"maximum,omitempty"`
+	// Default - READ-ONLY; The default capacity.
+	Default *int32 `json:"default,omitempty"`
+	// ScaleType - READ-ONLY; The scale type applicable to the sku. Possible values include: 'SkuCapacityScaleTypeAutomatic', 'SkuCapacityScaleTypeManual', 'SkuCapacityScaleTypeNone'
+	ScaleType SkuCapacityScaleType `json:"scaleType,omitempty"`
+}
+
+// SkuCosts describes metadata for retrieving price info.
+type SkuCosts struct {
+	// MeterID - READ-ONLY; Used for querying price from commerce.
+	MeterID *string `json:"meterID,omitempty"`
+	// Quantity - READ-ONLY; The multiplier is needed to extend the base metered cost.
+	Quantity *int64 `json:"quantity,omitempty"`
+	// ExtendedUnit - READ-ONLY; An invariant to show the extended unit.
+	ExtendedUnit *string `json:"extendedUnit,omitempty"`
+}
+
+// SkuLocationInfo ...
+type SkuLocationInfo struct {
+	// Location - READ-ONLY; Location of the SKU
+	Location *string `json:"location,omitempty"`
+	// Zones - READ-ONLY; List of availability zones where the SKU is supported.
+	Zones *[]string `json:"zones,omitempty"`
+	// ZoneDetails - READ-ONLY; Details of capabilities available to a SKU in specific zones.
+	ZoneDetails *[]SkuZoneDetails `json:"zoneDetails,omitempty"`
+}
+
+// SkuRestrictionInfo ...
+type SkuRestrictionInfo struct {
+	// Locations - READ-ONLY; Locations where the SKU is restricted
+	Locations *[]string `json:"locations,omitempty"`
+	// Zones - READ-ONLY; List of availability zones where the SKU is restricted.
+	Zones *[]string `json:"zones,omitempty"`
+}
+
+// SkuRestrictions describes scaling information of a SKU.
+type SkuRestrictions struct {
+	// Type - READ-ONLY; The type of restrictions. Possible values include: 'Location', 'Zone'
+	Type SkuRestrictionsType `json:"type,omitempty"`
+	// Values - READ-ONLY; The value of restrictions. If the restriction type is set to location. This would be different locations where the SKU is restricted.
+	Values *[]string `json:"values,omitempty"`
+	// RestrictionInfo - READ-ONLY; The information about the restriction where the SKU cannot be used.
+	RestrictionInfo *SkuRestrictionInfo `json:"restrictionInfo,omitempty"`
+	// ReasonCode - READ-ONLY; The reason for restriction. Possible values include: 'QuotaID', 'NotAvailableForSubscription'
+	ReasonCode SkuRestrictionsReasonCode `json:"reasonCode,omitempty"`
+}
+
+// SkusResult the List Resource Skus operation response.
+type SkusResult struct {
+	autorest.Response `json:"-"`
+<<<<<<< HEAD:vendor/github.com/Azure/azure-sdk-for-go/services/apimanagement/mgmt/2020-12-01/apimanagement/models.go
+	// Value - Page values.
+	Value *[]SubscriptionContract `json:"value,omitempty"`
+	// Count - Total record count number across all pages.
+	Count *int64 `json:"count,omitempty"`
+	// NextLink - Next page link if any.
+=======
+	// Value - The list of skus available for the subscription.
+	Value *[]Sku `json:"value,omitempty"`
+	// NextLink - READ-ONLY; The URI to fetch the next page of Resource Skus. Call ListNext() with this URI to fetch the next page of Resource Skus
+>>>>>>> 45aaf0a2ea7831456cec42048f4b569f452950cb:vendor/github.com/Azure/azure-sdk-for-go/services/apimanagement/mgmt/2019-12-01/apimanagement/models.go
 	NextLink *string `json:"nextLink,omitempty"`
 }
 
@@ -15011,6 +16131,7 @@ type TenantConfigurationValidateFuture struct {
 	Result func(TenantConfigurationClient) (OperationResultContract, error)
 }
 
+<<<<<<< HEAD:vendor/github.com/Azure/azure-sdk-for-go/services/apimanagement/mgmt/2020-12-01/apimanagement/models.go
 <<<<<<< HEAD:vendor/github.com/Azure/azure-sdk-for-go/services/apimanagement/mgmt/2019-12-01/apimanagement/models.go
 // UnmarshalJSON is the custom unmarshaller for CreateFuture.
 func (future *TenantConfigurationValidateFuture) UnmarshalJSON(body []byte) error {
@@ -15044,6 +16165,8 @@ func (future *TenantConfigurationValidateFuture) result(client TenantConfigurati
 	}
 	return
 =======
+=======
+>>>>>>> 45aaf0a2ea7831456cec42048f4b569f452950cb:vendor/github.com/Azure/azure-sdk-for-go/services/apimanagement/mgmt/2019-12-01/apimanagement/models.go
 // TenantSettingsCollection paged AccessInformation list representation.
 type TenantSettingsCollection struct {
 	autorest.Response `json:"-"`
@@ -15289,7 +16412,10 @@ func (tscp TenantSettingsContractProperties) MarshalJSON() ([]byte, error) {
 		objectMap["settings"] = tscp.Settings
 	}
 	return json.Marshal(objectMap)
+<<<<<<< HEAD:vendor/github.com/Azure/azure-sdk-for-go/services/apimanagement/mgmt/2020-12-01/apimanagement/models.go
 >>>>>>> updated apimanagement sdk:vendor/github.com/Azure/azure-sdk-for-go/services/apimanagement/mgmt/2020-12-01/apimanagement/models.go
+=======
+>>>>>>> 45aaf0a2ea7831456cec42048f4b569f452950cb:vendor/github.com/Azure/azure-sdk-for-go/services/apimanagement/mgmt/2019-12-01/apimanagement/models.go
 }
 
 // TermsOfServiceProperties terms of service contract properties.
