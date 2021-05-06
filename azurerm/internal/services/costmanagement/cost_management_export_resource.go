@@ -5,10 +5,8 @@ import (
 	"strings"
 	"time"
 
-	resourceValidate "github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/resource/validate"
-	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
-
 	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/services/costmanagement/validate"
+	"github.com/terraform-providers/terraform-provider-azurerm/azurerm/internal/tf/pluginsdk"
 
 	"github.com/Azure/azure-sdk-for-go/services/costmanagement/mgmt/2020-06-01/costmanagement"
 	"github.com/Azure/go-autorest/autorest/date"
@@ -25,7 +23,7 @@ import (
 func resourceCostManagementExport() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceCostManagementExportCreateUpdate,
-		Read:   resourceCostManagementExportpRead,
+		Read:   resourceCostManagementExportRead,
 		Update: resourceCostManagementExportCreateUpdate,
 		Delete: resourceCostManagementExportDelete,
 		Importer: pluginsdk.ImporterValidatingResourceId(func(id string) error {
@@ -52,7 +50,7 @@ func resourceCostManagementExport() *schema.Resource {
 				Type:         schema.TypeString,
 				Required:     true,
 				ForceNew:     true,
-				ValidateFunc: resourceValidate.ResourceGroupID,
+				ValidateFunc: validation.StringIsNotEmpty,
 			},
 
 			"active": {
@@ -123,15 +121,15 @@ func resourceCostManagementExport() *schema.Resource {
 							Required:     true,
 							ValidateFunc: validation.StringIsNotEmpty,
 						},
+
 						"time_frame": {
 							Type:     schema.TypeString,
 							Required: true,
 							ValidateFunc: validation.StringInSlice([]string{
 								string(costmanagement.Custom),
+								string(costmanagement.BillingMonthToDate),
 								string(costmanagement.MonthToDate),
 								string(costmanagement.TheLastMonth),
-								string(costmanagement.TheLastWeek),
-								string(costmanagement.TheLastYear),
 								string(costmanagement.WeekToDate),
 								string(costmanagement.MonthToDate),
 							}, false),
@@ -149,13 +147,13 @@ func resourceCostManagementExportCreateUpdate(d *schema.ResourceData, meta inter
 	defer cancel()
 
 	name := d.Get("name").(string)
-	resourceGroup := d.Get("resource_group_id").(string)
+	scope := d.Get("scope").(string)
 
 	if d.IsNewResource() {
-		existing, err := client.Get(ctx, resourceGroup, name)
+		existing, err := client.Get(ctx, scope, name)
 		if err != nil {
 			if !utils.ResponseWasNotFound(existing.Response) {
-				return fmt.Errorf("checking for presence of existing Cost Management Export Resource Group %q (Resource Group %q): %s", name, resourceGroup, err)
+				return fmt.Errorf("checking for presence of existing Cost Management Export Resource Group %q (Resource Group %q): %s", name, scope, err)
 			}
 		}
 
@@ -172,35 +170,33 @@ func resourceCostManagementExportCreateUpdate(d *schema.ResourceData, meta inter
 		status = costmanagement.Inactive
 	}
 
-	properties := &costmanagement.ExportProperties{
-		Schedule: &costmanagement.ExportSchedule{
-			Recurrence: costmanagement.RecurrenceType(d.Get("recurrence_type").(string)),
-			RecurrencePeriod: &costmanagement.ExportRecurrencePeriod{
-				From: &date.Time{Time: from},
-				To:   &date.Time{Time: to},
+	properties := costmanagement.Export{
+		ExportProperties: &costmanagement.ExportProperties{
+			Schedule: &costmanagement.ExportSchedule{
+				Recurrence: costmanagement.RecurrenceType(d.Get("recurrence_type").(string)),
+				RecurrencePeriod: &costmanagement.ExportRecurrencePeriod{
+					From: &date.Time{Time: from},
+					To:   &date.Time{Time: to},
+				},
+				Status: status,
 			},
-			Status: status,
+			DeliveryInfo: expandExportDeliveryInfo(d.Get("delivery_info").([]interface{})),
+			Format:       costmanagement.Csv,
+			Definition:   expandExportDefinition(d.Get("query").([]interface{})),
 		},
-		DeliveryInfo: expandExportDeliveryInfo(d.Get("delivery_info").([]interface{})),
-		Format:       costmanagement.Csv,
-		Definition:   expandExportQuery(d.Get("query").([]interface{})),
 	}
 
-	account := costmanagement.Export{
-		ExportProperties: properties,
+	if _, err := client.CreateOrUpdate(ctx, scope, name, properties); err != nil {
+		return fmt.Errorf("creating/updating Cost Management Export Resource Group %q (Resource Group %q): %+v", name, scope, err)
 	}
 
-	if _, err := client.CreateOrUpdate(ctx, resourceGroup, name, account); err != nil {
-		return fmt.Errorf("creating/updating Cost Management Export Resource Group %q (Resource Group %q): %+v", name, resourceGroup, err)
-	}
-
-	resp, err := client.Get(ctx, resourceGroup, name)
+	resp, err := client.Get(ctx, scope, name)
 	if err != nil {
-		return fmt.Errorf("retrieving Cost Management Export Resource Group %q (Resource Group %q): %+v", name, resourceGroup, err)
+		return fmt.Errorf("retrieving Cost Management Export Resource Group %q (Resource Group %q): %+v", name, scope, err)
 	}
 
 	if resp.ID == nil {
-		return fmt.Errorf("cannot read Cost Management Export Resource Group %q (Resource Group %q) ID", name, resourceGroup)
+		return fmt.Errorf("cannot read Cost Management Export Resource Group %q (Resource Group %q) ID", name, scope)
 	}
 
 	id := *resp.ID
@@ -317,28 +313,28 @@ func flattenExportDeliveryInfo(input *costmanagement.ExportDeliveryInfo) []inter
 	return []interface{}{attrs}
 }
 
-func expandExportQuery(input []interface{}) *costmanagement.QueryDefinition {
+func expandExportDefinition(input []interface{}) *costmanagement.ExportDefinition {
 	if len(input) == 0 || input[0] == nil {
 		return nil
 	}
 
 	attrs := input[0].(map[string]interface{})
-	definitionInfo := &costmanagement.QueryDefinition{
-		Type:      utils.String(attrs["type"].(string)),
+	definitionInfo := &costmanagement.ExportDefinition{
+		Type:      costmanagement.ExportType(attrs["type"].(string)),
 		Timeframe: costmanagement.TimeframeType(attrs["time_frame"].(string)),
 	}
 
 	return definitionInfo
 }
 
-func flattenExportQuery(input *costmanagement.QueryDefinition) []interface{} {
+func flattenExportDefinition(input *costmanagement.ExportDefinition) []interface{} {
 	if input == nil {
 		return []interface{}{}
 	}
 
 	attrs := make(map[string]interface{})
-	if queryType := input.Type; queryType != nil {
-		attrs["type"] = *queryType
+	if queryType := input.Type; queryType != "" {
+		attrs["type"] = costmanagement.ExportType(queryType)
 	}
 	attrs["time_frame"] = string(input.Timeframe)
 
